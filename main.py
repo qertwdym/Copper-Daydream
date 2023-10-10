@@ -1,16 +1,20 @@
 import pygame
+import pygame.font
 import sys
 import random
 import math
 import os
 import time
 import json 
+import tkinter as tk
+from tkinter import messagebox
 
 def resource_path(relative_path):
     """ Get absolute path to resource """
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
+player_name = ""
 data_file_path = resource_path('game_data.json')
 pygame.init()
 
@@ -101,10 +105,40 @@ def load_highscores():
         return []
 
 def save_highscores(highscores):
-    data = {'highscores': highscores}
+    highscore_data = []
+    for i, (player_name, score) in enumerate(highscores, start=1):
+        highscore_data.append([i, player_name, score])
+    
+    data = {'highscores': highscore_data}
     with open(data_file_path, 'w') as file:
         json.dump(data, file)
         
+def get_player_name():
+    root = tk.Tk()
+    root.title("Enter Your Username")
+    root.geometry("400x200")
+
+    player_name_var = tk.StringVar()  # Store the player's name
+
+    def submit_username():
+        player_name = entry.get()
+        player_name_var.set(player_name)  # Set the StringVar with the player's name
+        root.destroy()
+
+    label = tk.Label(root, text="Enter your username:")
+    label.pack(pady=10)
+
+    entry = tk.Entry(root, textvariable=player_name_var)  # Use the StringVar
+    entry.pack(pady=5)
+
+    submit_button = tk.Button(root, text="Submit", command=submit_username)
+    submit_button.pack(pady=10)
+
+    root.mainloop()
+
+    return player_name_var.get() 
+
+    
 def show_cat():
     screen.blit(cat_image, (cat_x, cat_y))
 
@@ -188,6 +222,12 @@ def game_over(x, y, x1, y1):
     screen.blit(replay, (x1, y1))
     score_display(60, 320)
     highscore_display(60, 360, highscores)
+    
+def show_player_name(player_name, cat_x, cat_y):
+    font = pygame.font.Font(resource_path('FreeSansBold.ttf'), 20)
+    player_name_text = font.render("" + player_name, True, (255, 255, 255))
+    text_rect = player_name_text.get_rect(center=(cat_x + 25, cat_y - 20))
+    screen.blit(player_name_text, text_rect)
 
 #GUI for start game
 def start_menu():
@@ -223,6 +263,7 @@ def start_menu():
 
 def main():
     start_menu()
+    player_name = get_player_name()
     global score
     global life
     global fishbone_yc
@@ -345,21 +386,21 @@ def main():
                     life_yc = 3
                     
             # #### collision ######
-            collision1 = is_collision(enemy_1x+40, enemy_1y+40, fishbone_x, fishbone_y,100)
+            collision1= is_collision(enemy_1x+40, enemy_1y+40, fishbone_x, fishbone_y,100) #enemy
             if collision1 == True:
                 explosion_animation(enemy_1x, enemy_1y)
                 enemy_1x = random.randint(40, 410)
                 enemy_1y = -200
                 ready_fishbone()
                 score += 1
-            collision2 = is_collision(enemy_2x+40, enemy_2y+40, fishbone_x,fishbone_y,100)
+            collision2 = is_collision(enemy_2x+40, enemy_2y+40, fishbone_x,fishbone_y,100) #bird
             if collision2 == True:
                 explosion_animation(enemy_2x, enemy_2y)
                 enemy_2x = random.randint(40, 410)
                 enemy_2y = -6000
                 ready_fishbone()
                 score += 10
-            collision3 = is_collision(boss_x+80, boss_y+60, fishbone_x, fishbone_y,100)
+            collision3 = is_collision(boss_x+80, boss_y+60, fishbone_x, fishbone_y,100) #boss
             if collision3 == True:
                 explosion_animation(boss_x+30, boss_y)
                 ready_fishbone()
@@ -370,7 +411,7 @@ def main():
                     explosion_animation(boss_x, boss_y)
                     boss_life = 30
                     score += 50
-            collision4 = is_collision(mine_x+25, mine_y+25, x=cat_x, y=cat_y,d=50)
+            collision4 = is_collision(mine_x+25, mine_y+25, x=cat_x, y=cat_y,d=50) #mine
             if collision4 == True:
                 explosion_animation(mine_x, mine_y)
                 ready_fishbone()
@@ -378,7 +419,7 @@ def main():
                 mine_y = random.randint(300, 450)
                 explosion_animation(mine_x, mine_y)
                 life -= 20
-            collision5 = is_collision(mine_2x+25, mine_2y+25, x=cat_x, y=cat_y,d=50)
+            collision5 = is_collision(mine_2x+25, mine_2y+25, x=cat_x, y=cat_y,d=50) #mine2
             if collision5 == True:
                 explosion_animation(mine_2x, mine_2y)
                 ready_fishbone()
@@ -386,7 +427,7 @@ def main():
                 mine_2y = random.randint(0, 100)
                 explosion_animation(mine_2x, mine_2y)
                 life -= 20
-            collision6 = is_collision(life_x, life_y, x=cat_x, y=cat_y,d=50)
+            collision6 = is_collision(life_x, life_y, x=cat_x, y=cat_y,d=50) #powerup
             if collision6 == True:
                 life_x = random.randint(40, 410)
                 life_y = random.randint(-4000, -1000)
@@ -459,9 +500,7 @@ def main():
             life_x = 120
             life_xc = 8
             
-
         # when boss is in nobody is allowed.
-
         if boss_y >= -300 and boss_y <= 675:
 
             enemy_1yc = 0
@@ -489,12 +528,10 @@ def main():
         mine_2y += track_speed
 
         show_mine()
+        show_player_name(player_name, cat_x, cat_y)
         show_cat()
         show_enemy()
         score_display(10, 10)
-        if score > max(highscores):
-            highscores.append(score)
-            save_highscores(highscores)
 
         if enemy_1y >= 530 and enemy_1y <= 600:
             life -= 1
