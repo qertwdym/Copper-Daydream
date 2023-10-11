@@ -74,7 +74,7 @@ boss_life = 30
 
 # score
 score = 0
-highscore = []
+highscores = []
 
 # life
 life = 100
@@ -104,12 +104,14 @@ def load_highscores():
     except FileNotFoundError:
         return []
 
-def save_highscores(highscores):
+def save_highscores(current_score, current_player_name):
     highscore_data = []
-    for i, (player_name, score) in enumerate(highscores, start=1):
-        highscore_data.append([i, player_name, score])
-    
+    for (player_name, score) in highscores:
+        highscore_data.append([player_name, score])
+    highscore_data.append([current_player_name, current_score])
     data = {'highscores': highscore_data}
+    print('check save high score data')
+    print(data)
     with open(data_file_path, 'w') as file:
         json.dump(data, file)
         
@@ -191,17 +193,22 @@ def explosion_animation(x, y):
 def score_display(x, y):
     font = pygame.font.Font(resource_path('FreeSansBold.ttf'), 32)
 
-    score_display = font.render('SCORE:' + str(score), True, (230, 230, 230))
+    score_display = font.render('SCORE:' + str(score), True, (230, 230, 230 ))
     screen.blit(score_display, (x, y))
 
 def highscore_display(x, y, highscores):
+    print('in function high display')
+    print(highscores)
     if highscores:
-        max_score = max(highscores)
+        max_score = sorted(highscores, key=lambda x: x[1])
+        print('max score after sort')
+        max_score = max_score.pop()[1]
     else:
         max_score = 0
     
     font = pygame.font.Font(resource_path('FreeSansBold.ttf'), 25)
-    highscore_display = font.render('HIGH-SCORE:' + str(max_score), True, (230, 230, 230))
+    highscore_display = font.render(
+        'HIGH-SCORE:' + str(max_score), True, (230, 230, 230))
     screen.blit(highscore_display, (x, y))
 
 def life_display(x, y):
@@ -545,11 +552,16 @@ def main():
 
         life_display(10, 50)
         if life <= 0:
+            print('score')
+            print(score)
+            print('player name')
+            print(player_name)
+            save_highscores(score, player_name)
+            highscores = load_highscores()
             game_over(60, 250, 10, 10)
 
         pygame.display.update()
 
     main()
     
-highscores = load_highscores()
 main()
